@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOS Burgers > Home</title>
+    <link rel="icon" href="Assets/logo.jpeg" type="image/x-icon">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        #navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        body {
+            padding-top: 70px;
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-image: url('Assets/logo.jpeg');
+            background-size: contain;
+            background-position: initial;
+            background-repeat: initial;
+            background-color: rgba(0, 0, 0, 0.08);
+            background-blend-mode: overlay;
+            background-attachment: scroll;
+            background-clip: border-box;
+        }
+
+        .hero-section {
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://api.placeholder.com/1600/800') center/cover;
+            color: white;
+            padding: 100px 0;
+            margin-bottom: 30px;
+            border-radius: 10px;
+        }
+
+        .feature-card {
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin-bottom: 20px;
+            height: 100%;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            text-align: center;
+            height: 100%;
+        }
+
+        .stat-card i {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: #343a40;
+        }
+
+        .quick-action-btn {
+            border-radius: 50px;
+            padding: 12px 30px;
+            font-weight: 600;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+        }
+
+        .alert-expiry {
+            border-left: 4px solid #dc3545;
+        }
+
+        .footer {
+            background-color: #343a40;
+            color: white;
+            padding: 30px 0;
+            margin-top: 50px;
+        }
+
+        .burger-icon {
+            color: #ff6b6b;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark" id="navbar">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="fas fa-hamburger burger-icon me-2"></i> MOS Burgers
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="menu.html">Menu</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="order.html">Orders</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="Inventory.html">Inventory</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="customers.html">Customers</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="reports.html">Reports</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div id="content" class="container mt-3">
+        <!-- Welcome Banner -->
+        <div class="hero-section text-center mb-4">
+            <h1 class="display-4 fw-bold">Welcome to MOS Burgers POS System</h1>
+            <p class="lead">Streamlining operations for better service and management</p>
+        </div>
+
+        <!-- Quick Stats Row -->
+        <!-- <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <i class="fas fa-utensils"></i>
+                    <h3>50-60</h3>
+                    <p class="text-muted">Daily Customers</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <i class="fas fa-hamburger"></i>
+                    <h3 id="menuItemCount">0</h3>
+                    <p class="text-muted">Menu Items</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <i class="fas fa-tags"></i>
+                    <h3>8</h3>
+                    <p class="text-muted">Active Promotions</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>Rs <span>20 000</span></h3>
+                    <p class="text-muted">Today's Sales</p>
+                </div>
+            </div>
+        </div> -->
+
+        <!-- Quick Actions -->
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+            </div>
+            <div class="card-body text-center">
+                <a href="order.html" class="btn btn-primary quick-action-btn">
+                    <i class="fas fa-plus-circle me-2"></i>New Order
+                </a>
+                <a href="menu.html" class="btn btn-success quick-action-btn">
+                    <i class="fas fa-edit me-2"></i>Manage Menu
+                </a>
+                <a href="Inventory.html" class="btn btn-warning quick-action-btn">
+                    <i class="fas fa-box-open me-2"></i>Manage Inventory
+                </a>
+                <a href="customers.html" class="btn btn-info quick-action-btn text-white">
+                    <i class="fas fa-user-plus me-2"></i>Add Customer
+                </a>
+                <a href="reports.html" class="btn btn-secondary quick-action-btn">
+                    <i class="fas fa-chart-bar me-2"></i>View Reports
+                </a>
+            </div>
+        </div>
+
+        <!-- Notifications -->
+        <!-- <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="fas fa-bell me-2"></i>Notifications</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger alert-expiry mb-2">
+                    <strong><i class="fas fa-exclamation-triangle me-2"></i>Attention!</strong> 3 food items are expired
+                    and need to be removed.
+                    <a href="#" class="alert-link">View Details</a>
+                </div>
+                <div class="alert alert-warning mb-2">
+                    <strong><i class="fas fa-shopping-basket me-2"></i>Low Stock!</strong> Chicken patties (5 remaining)
+                    need to be restocked.
+                    <a href="#" class="alert-link">Update Inventory</a>
+                </div>
+                <div class="alert alert-info mb-2">
+                    <strong><i class="fas fa-tag me-2"></i>New Promotion!</strong> Weekend special discount has been
+                    activated.
+                    <a href="#" class="alert-link">View Promotion</a>
+                </div>
+            </div>
+        </div> -->
+
+        <!-- System Features -->
+        <h2 class="mb-4"><i class="fas fa-star me-2 burger-icon"></i>System Features</h2>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card feature-card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-cash-register text-primary me-2"></i>Order Processing
+                        </h5>
+                        <p class="card-text">Streamline order taking, processing, and fulfillment with our intuitive
+                            interface. Track orders in real-time and improve customer service.</p>
+                        <a href="order.html" class="btn btn-sm btn-outline-primary">Manage Orders</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card feature-card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-warehouse text-success me-2"></i>Store Management</h5>
+                        <p class="card-text">Add, update, and manage your menu items. Get notified about expiration
+                            dates and maintain optimal inventory levels.</p>
+                        <a href="menu.html" class="btn btn-sm btn-outline-success">Manage Items</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card feature-card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-file-invoice-dollar text-danger me-2"></i>Inventory Management
+                        </h5>
+                        <p class="card-text">
+                            Keep track of stock levels, manage suppliers, and receive alerts for low stock or expired items.
+                            Ensure your inventory is always up to date and ready for service.
+                        </p>
+                        <a href="Inventory.html" class="btn btn-sm btn-outline-danger">Inventory</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <div class="card feature-card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-users text-info me-2"></i>Customer Management</h5>
+                        <p class="card-text">Keep track of customer information, preferences, and order history to
+                            provide personalized service.</p>
+                        <a href="customers.html" class="btn btn-sm btn-outline-info">Manage Customers</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card feature-card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-chart-pie text-warning me-2"></i>Reporting & Analytics
+                        </h5>
+                        <p class="card-text">Access detailed reports on sales, inventory, and customer behavior to make
+                            data-driven business decisions.</p>
+                        <a href="reports.html" class="btn btn-sm btn-outline-warning">View Reports</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card feature-card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-percentage text-secondary me-2"></i>Promotions &
+                            Discounts</h5>
+                        <p class="card-text">Create and manage promotional deals and discounts to attract customers and
+                            boost sales.</p>
+                        <a href="#" class="btn btn-sm btn-outline-secondary">Manage Promotions</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <!-- <div class="card mt-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Activity</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Activity</th>
+                                <th>User</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>10:45 AM</td>
+                                <td>New order processed</td>
+                                <td>Cashier1</td>
+                                <td><span class="badge bg-success">Completed</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:30 AM</td>
+                                <td>Inventory updated</td>
+                                <td>Manager</td>
+                                <td><span class="badge bg-info">Processed</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:15 AM</td>
+                                <td>Customer added to database</td>
+                                <td>Cashier2</td>
+                                <td><span class="badge bg-success">Completed</span></td>
+                            </tr>
+                            <tr>
+                                <td>09:50 AM</td>
+                                <td>Expired items removed</td>
+                                <td>Manager</td>
+                                <td><span class="badge bg-warning">Pending review</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer text-end">
+                <a href="#" class="btn btn-sm btn-dark">View All Activity</a>
+            </div>
+        </div> -->
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 ">
+                    <h5><i class="fas fa-hamburger burger-icon me-2"></i>MOS Burgers</h5>
+                    <p>Welcome to MOS Burgers, where we serve the best burgers in town! Our POS system is designed to
+                        streamline your operations and enhance customer experience.</p>
+                    <p>Burger Street, Colombo, Sri Lanka <br> <a href="tel:+94 112 888 888"> 2 888 888</a><br>www.mosburgers.lk</p>
+                    <p><a href="#">contact@mosburgers.lk</a></p>
+
+                    <a href="#" class="text-white me-2"><i class="fab fa-whatsapp"></i></a>
+                    <a href="#" class="text-white me-2"><i class="fab fa-facebook"></i></a>
+                    <a href="#" class="text-white me-2"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="text-white me-2"><i class="fab fa-twitter"></i></a>
+
+                </div>
+                <div class="col-md-3">
+                    <h5>Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="menu.html" class="text-white">Menu Management</a></li>
+                        <li><a href="order.html" class="text-white">Order Processing</a></li>
+                        <li><a href="Inventory.html" class="text-white">Inventory Management</a></li>
+                        <li><a href="customers.html" class="text-white">Customer Management</a></li>
+                        <li><a href="reports.html" class="text-white">Reports & Analytics</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5>Support</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-white">Help Center</a></li>
+                        <li><a href="#" class="text-white">User Guide</a></li>
+                        <li><a href="#" class="text-white">Contact Support</a></li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="my-4 bg-light">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-0">&copy; 2025 MOS Burgers. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p>Developed by Nugitha Disas</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
