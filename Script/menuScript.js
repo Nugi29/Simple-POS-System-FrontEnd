@@ -18,7 +18,7 @@ function loadItems() {
 function renderMenu(items) {
     const menuContent = document.getElementById('menuGrid');
     menuContent.innerHTML = '';
-    
+
     items.forEach((item) => {
         const card = document.createElement('div');
         card.classList.add('col-md-4', 'col-sm-6', 'mb-3');
@@ -39,16 +39,11 @@ function renderMenu(items) {
     });
 }
 
-// Load items on page load
-loadItems();
-
 // Add item to cart using API
 function addToCart(itemId) {
     fetch(`http://localhost:8080/item/search-by-id/${itemId}`, { method: "GET", redirect: "follow" })
         .then(response => response.json())
         .then(item => {
-            console.log("Item fetched:", item);
-            // Check if the item is already in the cart
             const cartItem = cart.find(cartItem => cartItem.id === item.id);
             if (cartItem) {
                 cartItem.quantity++;
@@ -85,10 +80,10 @@ function calculateTotal() {
 function updateTotals() {
     const rawTotal = calculateRawTotal();
     const discountedTotal = calculateTotal();
-    
+
     const totalPriceElem = document.getElementById('totalPrice');
     const totalWithDiscountElem = document.getElementById('totalWithDiscount');
-    
+
     if (totalPriceElem) totalPriceElem.textContent = rawTotal.toFixed(2);
     if (totalWithDiscountElem) totalWithDiscountElem.textContent = discountedTotal.toFixed(2);
 }
@@ -97,9 +92,9 @@ function updateTotals() {
 function renderCart() {
     const cartItems = document.getElementById('cart-items');
     if (!cartItems) return;
-    
+
     cartItems.innerHTML = '';
-    
+
     cart.forEach((item, index) => {
         const cartItemElem = document.createElement('div');
         cartItemElem.classList.add('cart-item', 'mb-2', 'p-2', 'border-bottom');
@@ -118,7 +113,7 @@ function renderCart() {
         `;
         cartItems.appendChild(cartItemElem);
     });
-    
+
     updateTotals();
     updateCartCount();
 }
@@ -135,10 +130,31 @@ function removeFromCart(index) {
     renderCart();
 }
 
-// Filter items by category from API
+// Load and populate category filter
+function filterItemsByCategory() {
+    fetch('http://localhost:8080/category/get-all/list', { method: "GET", redirect: "follow" })
+        .then(response => response.json())
+        .then(categories => {
+            const categoryFilter = document.getElementById('categoryFilter');
+            if (!categoryFilter) return;
+
+            categoryFilter.innerHTML = '<option value="">All Categories</option>';
+            categories.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = item.name;
+                categoryFilter.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading categories:', error);
+        });
+}
+
+// Filter items by selected category
 function filterByCategory(categoryId) {
     if (categoryId) {
-        fetch(`http://localhost:8080/item/get-by-category/${categoryId}`, { method: "GET" })
+        fetch(`http://localhost:8080/item/search-by-category/${categoryId}`, { method: "GET" })
             .then(response => response.json())
             .then(items => {
                 renderMenu(items);
@@ -147,11 +163,11 @@ function filterByCategory(categoryId) {
                 console.error('Error filtering items by category:', error);
             });
     } else {
-        loadItems(); // Load all items if no category is selected
+        loadItems(); // Load all items if "All Categories" selected
     }
 }
 
-// Search items by name from API
+// Search items by name
 function searchItems(searchTerm) {
     if (searchTerm.trim() !== '') {
         fetch(`http://localhost:8080/item/search/${searchTerm}`, { method: "GET" })
@@ -163,37 +179,11 @@ function searchItems(searchTerm) {
                 console.error('Error searching items:', error);
             });
     } else {
-        loadItems(); // Load all items if search term is empty
+        loadItems(); // Reload all if search is empty
     }
 }
 
-// Load all categories from API
-function loadCategories() {
-    fetch('http://localhost:8080/category/get-all/list', { method: "GET" })
-        .then(response => response.json())
-        .then(categories => {
-            populateCategoryFilter(categories);
-        })
-        .catch(error => {
-            console.error('Error loading categories:', error);
-        });
-}
-
-// Populate category filter dropdown
-function populateCategoryFilter(categories) {
-    const categoryFilter = document.getElementById('categoryFilter');
-    if (!categoryFilter) return;
-    
-    categoryFilter.innerHTML = '<option value="">All Categories</option>';
-    categories.forEach(category => {
-        const option = document.createElement('option');
-        option.value = category.id;
-        option.textContent = category.name;
-        categoryFilter.appendChild(option);
-    });
-}
-
-// Place an order via API
+// Place an order
 function placeOrder() {
     const customerName = document.getElementById('customerName')?.value.trim();
     const contactNo = document.getElementById('contactNo')?.value.trim();
@@ -209,7 +199,6 @@ function placeOrder() {
         return;
     }
 
-    // First, create or get customer
     const customerData = {
         name: customerName,
         phone: contactNo
@@ -217,89 +206,77 @@ function placeOrder() {
 
     fetch('http://localhost:8080/customer/add', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(customerData)
     })
-    .then(response => response.json())
-    .then(customer => {
-        // Now create the order
-        const orderData = {
-            customerId: customer.id,
-            items: cart.map(item => ({
-                itemId: item.id,
-                quantity: item.quantity,
-                unitPrice: item.price
-            })),
-            discount: discount,
-            totalAmount: calculateTotal()
-        };
+        .then(response => response.json())
+        .then(customer => {
+            const orderData = {
+                customerId: customer.id,
+                items: cart.map(item => ({
+                    itemId: item.id,
+                    quantity: item.quantity,
+                    unitPrice: item.price
+                })),
+                discount: discount,
+                totalAmount: calculateTotal()
+            };
 
-        return fetch('http://localhost:8080/order/create', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(orderData)
+            return fetch('http://localhost:8080/order/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderData)
+            });
+        })
+        .then(response => response.json())
+        .then(order => {
+            alert(`Order #${order.id} placed successfully!`);
+            cart = [];
+            document.getElementById('customerName').value = '';
+            document.getElementById('contactNo').value = '';
+            document.getElementById('discount').value = '0';
+            renderCart();
+        })
+        .catch(error => {
+            console.error('Error placing order:', error);
+            alert('Failed to place order. Please try again.');
         });
-    })
-    .then(response => response.json())
-    .then(order => {
-        alert(`Order #${order.id} placed successfully!`);
-        
-        // Clear cart and form
-        cart = [];
-        if (document.getElementById('customerName')) document.getElementById('customerName').value = '';
-        if (document.getElementById('contactNo')) document.getElementById('contactNo').value = '';
-        if (document.getElementById('discount')) document.getElementById('discount').value = '0';
-        renderCart();
-    })
-    .catch(error => {
-        console.error('Error placing order:', error);
-        alert('Failed to place order. Please try again.');
-    });
 }
 
-// Load customers from API
+// Load customers
 function loadCustomers() {
     fetch('http://localhost:8080/customer/get-all/list', { method: "GET" })
         .then(response => response.json())
         .then(customers => {
-            populateCustomerDropdown(customers);
+            const customerSelect = document.getElementById('existingCustomer');
+            if (!customerSelect) return;
+
+            customerSelect.innerHTML = '<option value="">-- Select a customer --</option>';
+            customers.forEach(customer => {
+                const option = document.createElement('option');
+                option.value = customer.id;
+                option.textContent = `${customer.name} (${customer.phone})`;
+                customerSelect.appendChild(option);
+            });
         })
         .catch(error => {
             console.error('Error loading customers:', error);
         });
 }
 
-// Populate customer dropdown
-function populateCustomerDropdown(customers) {
-    const customerSelect = document.getElementById('existingCustomer');
-    if (!customerSelect) return;
-    
-    customerSelect.innerHTML = '<option value="">-- Select a customer --</option>';
-    customers.forEach(customer => {
-        const option = document.createElement('option');
-        option.value = customer.id;
-        option.textContent = `${customer.name} (${customer.phone})`;
-        customerSelect.appendChild(option);
-    });
-}
-
-// Fill customer info when a customer is selected
+// Fill customer info
 function fillCustomerInfo(customerId) {
     if (!customerId) {
-        if (document.getElementById('customerName')) document.getElementById('customerName').value = '';
-        if (document.getElementById('contactNo')) document.getElementById('contactNo').value = '';
+        document.getElementById('customerName').value = '';
+        document.getElementById('contactNo').value = '';
         return;
     }
 
     fetch(`http://localhost:8080/customer/search-by-id/${customerId}`, { method: "GET" })
         .then(response => response.json())
         .then(customer => {
-            if (document.getElementById('customerName')) document.getElementById('customerName').value = customer.name;
-            if (document.getElementById('contactNo')) document.getElementById('contactNo').value = customer.phone;
+            document.getElementById('customerName').value = customer.name;
+            document.getElementById('contactNo').value = customer.phone;
         })
         .catch(error => {
             console.error('Error loading customer details:', error);
@@ -307,36 +284,25 @@ function fillCustomerInfo(customerId) {
 }
 
 // Initialize page on load
-window.onload = function() {
+window.onload = function () {
     loadItems();
-    loadCategories();
+    filterItemsByCategory(); // Corrected line
     loadCustomers();
     renderCart();
-    
-    // Event listeners
-    if (document.getElementById('searchItems')) {
-        document.getElementById('searchItems').addEventListener('input', function() {
-            searchItems(this.value);
-        });
-    }
-    
-    if (document.getElementById('categoryFilter')) {
-        document.getElementById('categoryFilter').addEventListener('change', function() {
-            filterByCategory(this.value);
-        });
-    }
-    
-    if (document.getElementById('existingCustomer')) {
-        document.getElementById('existingCustomer').addEventListener('change', function() {
-            fillCustomerInfo(this.value);
-        });
-    }
-    
-    if (document.getElementById('placeOrder')) {
-        document.getElementById('placeOrder').addEventListener('click', placeOrder);
-    }
-    
-    if (document.getElementById('discount')) {
-        document.getElementById('discount').addEventListener('input', updateTotals);
-    }
+
+    document.getElementById('searchItems')?.addEventListener('input', function () {
+        searchItems(this.value);
+    });
+
+    document.getElementById('categoryFilter')?.addEventListener('change', function () {
+        filterByCategory(this.value);
+    });
+
+    document.getElementById('existingCustomer')?.addEventListener('change', function () {
+        fillCustomerInfo(this.value);
+    });
+
+    document.getElementById('placeOrder')?.addEventListener('click', placeOrder);
+
+    document.getElementById('discount')?.addEventListener('input', updateTotals);
 };
