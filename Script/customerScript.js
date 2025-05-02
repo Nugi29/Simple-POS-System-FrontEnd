@@ -20,6 +20,8 @@ function setupEventListeners() {
     }
 }
 
+
+
 // Handle form submission (add/update customer)
 function handleFormSubmit(e) {
     e.preventDefault();
@@ -207,7 +209,7 @@ function editCustomer(id) {
         editingId = customer.id;
         
         // Scroll to the form
-        document.getElementById('customerForm').scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('searchInput').scrollIntoView({ behavior: 'smooth' });
     })
     .catch(error => {
         console.error('Error loading customer details:', error);
