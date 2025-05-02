@@ -40,6 +40,11 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(data => {
                 const categorySelect = document.getElementById('inCategory');
                 if (categorySelect) {
+                    // Clear existing options except the first disabled one
+                    while (categorySelect.options.length > 1) {
+                        categorySelect.remove(1);
+                    }
+                    
                     data.forEach(category => {
                         const option = document.createElement('option');
                         option.value = [category.id, category.name];
@@ -54,9 +59,6 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
    
-
-
-    // Functions
     function handleFormSubmit(e) {
         e.preventDefault();
 
@@ -73,9 +75,16 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        // Ensure we have valid category data
+        if (!category || !category.includes(',')) {
+            alert('Please select a valid category');
+            return;
+        }
+
+        const categoryId = category.split(',')[0];
+        const categoryName = category.split(',')[1];
         
         if (editingIndex === -1) {
-
             const item = {
                 "code": code,
                 "name": name,
@@ -84,16 +93,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 "stock": stock,
                 "doexpire": doexpire,
                 "category": {
-                    "id": category.split(',')[0],
-                    "name": category.split(',')[1]
+                    "id": categoryId,
+                    "name": categoryName
                 }
             };
             addItemToAPI(item);
-
         } else {
-
             const item = {
-                
                 "id": editingIndex,
                 "code": code,
                 "name": name,
@@ -102,10 +108,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 "stock": stock,
                 "doexpire": doexpire,
                 "category": {
-                    "id": category.split(',')[0],
-                    "name": category.split(',')[1]
+                    "id": categoryId,
+                    "name": categoryName
                 }
-            }
+            };
             updateItemInAPI(item);
             submitBtn.innerHTML = '<i class="fas fa-save me-2"></i>Add Item';
             editingIndex = -1;
@@ -171,6 +177,13 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function updateItemInAPI(item) {
+        console.log('Updating item with data:', JSON.stringify(item, null, 2));
+        
+        // Ensure category is properly formatted
+        if (!item.category || !item.category.id) {
+            alert('Invalid category data. Please try again.');
+            return;
+        }
 
         fetch(`http://localhost:8080/item/update`, {
             method: 'PUT',
@@ -209,8 +222,8 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
 
-    function deleteItemFromAPI(code) {
-        fetch(`http://localhost:8080/item/delete/${code}`, {
+    function deleteItemFromAPI(id) {
+        fetch(`http://localhost:8080/item/delete/${id}`, {
             method: 'DELETE'
         })
             .then(response => {
@@ -270,10 +283,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td class="text-end">Rs. ${formattedPrice}</td>
                 <td class="text-center">${item.stock}</td>
                 <td class="text-center">
-                    <button class="btn btn-sm btn-outline-primary me-1 edit-btn" data-code="${item.code}">
+                    <button class="btn btn-sm btn-outline-primary me-1 edit-btn" data-id="${item.id}" data-code="${item.code}">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-danger delete-btn" data-code="${item.code}">
+                    <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${item.id}">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
@@ -283,21 +296,24 @@ document.addEventListener('DOMContentLoaded', function () {
         const editBtn = row.querySelector('.edit-btn');
         if (editBtn) {
             editBtn.addEventListener('click', function () {
-                getItemDetails(item.code);
+                const id = this.getAttribute('data-id');
+                const code = this.getAttribute('data-code');
+                getItemDetails(code, id);
             });
         }
 
         const deleteBtn = row.querySelector('.delete-btn');
         if (deleteBtn) {
             deleteBtn.addEventListener('click', function () {
-                confirmDelete(item.code);
+                const id = this.getAttribute('data-id');
+                confirmDelete(id);
             });
         }
 
         tableBody.appendChild(row);
     }
 
-    function getItemDetails(code) {
+    function getItemDetails(code, id) {
         fetch(`http://localhost:8080/item/search-by-code/${code}`)
             .then(response => {
                 if (!response.ok) {
@@ -306,6 +322,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 return response.json();
             })
             .then(item => {
+                // Store the item ID for updates
+                editingIndex = item.id || id;
                 populateForm(item);
             })
             .catch(error => {
@@ -317,19 +335,58 @@ document.addEventListener('DOMContentLoaded', function () {
     function populateForm(item) {
         codeInput.value = item.code;
         nameInput.value = item.name;
-        categoryInput.value = item.category.name || item.category;
         priceInput.value = item.price;
         discountInput.value = item.discount || 0;
         quantityInput.value = item.stock || item.quantity;
         expireDateInput.value = item.doexpire || item.expireDate || '';
 
+        // Set the category dropdown value
+        if (item.category && categoryInput) {
+            // First make sure we have the current categories loaded
+            fetch(`http://localhost:8080/category/get-all/list`)
+                .then(response => response.json())
+                .then(categories => {
+                    // Find the matching category
+                    const categoryMatch = categories.find(cat => 
+                        cat.id === item.category.id || 
+                        cat.name === item.category.name
+                    );
+                    
+                    if (categoryMatch) {
+                        // Set the value using both id and name to match our format
+                        const categoryValue = `${categoryMatch.id},${categoryMatch.name}`;
+                        
+                        // Check if the option exists
+                        let optionExists = false;
+                        for (let i = 0; i < categoryInput.options.length; i++) {
+                            if (categoryInput.options[i].value === categoryValue) {
+                                optionExists = true;
+                                categoryInput.selectedIndex = i;
+                                break;
+                            }
+                        }
+                        
+                        // If option doesn't exist, create it
+                        if (!optionExists) {
+                            const option = document.createElement('option');
+                            option.value = categoryValue;
+                            option.textContent = categoryMatch.name;
+                            categoryInput.appendChild(option);
+                            categoryInput.value = categoryValue;
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error('Error loading categories for edit:', err);
+                });
+        }
+
         submitBtn.innerHTML = '<i class="fas fa-edit me-2"></i>Update Item';
-        editingIndex = 0; // Just a flag to indicate we're in edit mode
     }
 
-    function confirmDelete(code) {
+    function confirmDelete(id) {
         if (confirm('Are you sure you want to delete this item?')) {
-            deleteItemFromAPI(code);
+            deleteItemFromAPI(id);
         }
     }
 
@@ -391,7 +448,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function updateMenuItemCount(count) {
-        const menuItemCountElement = document.getElementById('menuItemCount');
+        const menuItemCountElement = document.getElementById('totalItems');
         if (menuItemCountElement) {
             menuItemCountElement.textContent = count;
         }
