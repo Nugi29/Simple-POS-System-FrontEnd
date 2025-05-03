@@ -189,6 +189,7 @@ function placeOrder() {
     const contactNo = document.getElementById('contactNo')?.value.trim();
     const discount = parseFloat(document.getElementById('discount')?.value) || 0;
 
+
     if (!customerName || !contactNo) {
         alert('Please enter customer information');
         return;
@@ -211,18 +212,30 @@ function placeOrder() {
     })
         .then(response => response.json())
         .then(customer => {
+
             const orderData = {
-                customerId: customer.id,
-                items: cart.map(item => ({
-                    itemId: item.id,
-                    quantity: item.quantity,
-                    unitPrice: item.price
-                })),
-                discount: discount,
-                totalAmount: calculateTotal()
+                "code": getNextOrderId(),
+                "datetime": new Date().toLocaleString(),
+                "discount": discount,
+                "total": calculateTotal(),
+                "customer": {
+                    "id": customer.id,
+                    "name": customer.name
+                },
+                "admin": {
+                    "id": 1,
+                    "name": "admin "
+                },
+                "paymentmethod": {
+                    "id": 1,
+                    "name": "Cash"
+                },
+                "items": cart.map(item => ({
+                    "id": item.id
+                }))
             };
 
-            return fetch('http://localhost:8080/order/create', {
+            return fetch('http://localhost:8080/orders/add', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(orderData)
@@ -240,6 +253,35 @@ function placeOrder() {
         .catch(error => {
             console.error('Error placing order:', error);
             alert('Failed to place order. Please try again.');
+        });
+}
+
+function getNextOrderId() {
+    return fetch('http://localhost:8080/orders/get-order-code', { method: "GET" })
+        .then(response => response.json())
+        .then(data => {
+            if (!data || typeof data !== 'string') return null;
+
+            // Expected format: "ORD-2025-0020"
+            const parts = data.split('-');
+            if (parts.length !== 3) return null;
+
+            const prefix = parts[0]; // "ORD"
+            const year = parts[1];   // "2025"
+            let number = parseInt(parts[2], 10); // 20
+
+            if (isNaN(number)) return null;
+
+            number += 1;
+
+            // Pad the number with leading zeros to keep 4 digits
+            const newNumber = number.toString().padStart(4, '0');
+
+            return `${prefix}-${year}-${newNumber}`;
+        })
+        .catch(error => {
+            console.error('Error fetching order code:', error);
+            return null;
         });
 }
 
