@@ -55,6 +55,7 @@
         .burger-icon {
             color: #ff6b6b;
         }
+
         body {
             padding-top: 70px;
             background-color: #f8f9fa;
@@ -68,7 +69,6 @@
             background-attachment: scroll;
             background-clip: border-box;
         }
-
     </style>
 </head>
 <!-- Navigation Bar -->
@@ -122,7 +122,7 @@
                         </div>
                         <div class="col-md-4">
                             <select id="categoryFilter" class="form-select">
-                                
+
 
                             </select>
                         </div>
@@ -147,8 +147,10 @@
                     <select id="existingCustomer" class="form-select mb-3">
                         <option value="">-- Select a customer --</option>
                     </select>
-                    <input type="text" id="customerName" class="form-control mb-3" placeholder="Customer Name">
-                    <input type="text" id="contactNo" class="form-control" placeholder="Contact Number">
+                    <input type="text" id="customerName" class="form-control mb-3" placeholder="Customer Name" disabled>
+                    <input type="text" id="contactNo" class="form-control" placeholder="Contact Number" disabled>
+                    <button id="addCustomer" class="btn btn-primary mt-3 "
+                        onclick="window.location.href='customers.html'"> New Customer </button>
                 </div>
             </div>
 
