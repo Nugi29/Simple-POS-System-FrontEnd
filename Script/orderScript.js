@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Fetch orders from API and display them
 function displayOrders() {
     const orderTableBody = document.getElementById('orderTableBody');
-    
+
     fetch('http://localhost:8080/orders/get-all/list')
         .then(response => {
             if (!response.ok) {
@@ -18,12 +18,21 @@ function displayOrders() {
             orders.forEach((order, index) => {
                 const row = document.createElement('tr');
 
+                // Check if items exist and are in an array format
                 const itemsList = Array.isArray(order.items) ? order.items.map(item => {
-                    // console.log(item.quantity);
-                    
+                    console.log(item.items);
+
+
+
+                    // Safely access quantity and price with proper type conversion
                     const quantity = Number(item.quantity) || 0;
                     const price = Number(item.price) || 0;
-                    return `<li>${item.name || 'Unknown Item'} (x${quantity}) - Rs. ${(price * quantity)}</li>`;
+                    const itemTotal = price * quantity;
+
+                    // For debugging, log the entire item object to inspect its structure
+                    console.log('Item data:', item);
+
+                    return `<li>${item.name || 'Unknown Item'} (x${quantity}) - Rs. ${itemTotal.toFixed(2)}</li>`;
                 }).join('') : '<li>No items</li>';
 
                 const discount = Number(order.discount) || 0;
@@ -31,15 +40,15 @@ function displayOrders() {
 
                 row.innerHTML = `
                     <td>${order.id || index + 1}</td>
-                    <td>${order.customer.name || 'No Name'}</td>
-                    <td>${order.customer.phone || 'No Contact'}</td>
+                    <td>${order.customer?.name || 'No Name'}</td>
+                    <td>${order.customer?.phone || 'No Contact'}</td>
                     <td>
                         <ul>
                             ${itemsList}
                         </ul>
                     </td>
-                    <td>Rs. ${discount}</td>
-                    <td>Rs. ${totalPrice}</td>
+                    <td>Rs. ${discount.toFixed(2)}</td>
+                    <td>Rs. ${totalPrice.toFixed(2)}</td>
                     <td><button class="btn btn-sm" style="background-color:rgb(255, 81, 0);" onclick="printOrderReport('${order.id}')">Print Order Report</button></td>
                 `;
                 orderTableBody.appendChild(row);
@@ -51,7 +60,6 @@ function displayOrders() {
         });
 }
 
-
 // Add a new order via API
 function addOrder(newOrder) {
     fetch('http://localhost:8080/orders/add', {
@@ -61,20 +69,20 @@ function addOrder(newOrder) {
         },
         body: JSON.stringify(newOrder)
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(() => {
-        // Refresh the orders list
-        displayOrders();
-    })
-    .catch(error => {
-        console.error('Error adding order:', error);
-        alert('Failed to add order. Please try again later.');
-    });
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(() => {
+            // Refresh the orders list
+            displayOrders();
+        })
+        .catch(error => {
+            console.error('Error adding order:', error);
+            alert('Failed to add order. Please try again later.');
+        });
 }
 
 // Delete an order via API
@@ -82,44 +90,44 @@ function deleteOrder(orderId) {
     fetch(`http://localhost:8080/orders/delete/${orderId}`, {
         method: 'DELETE'
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        // Refresh the orders list
-        displayOrders();
-    })
-    .catch(error => {
-        console.error('Error deleting order:', error);
-        alert('Failed to delete order. Please try again later.');
-    });
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            // Refresh the orders list
+            displayOrders();
+        })
+        .catch(error => {
+            console.error('Error deleting order:', error);
+            alert('Failed to delete order. Please try again later.');
+        });
 }
 
 // Update an existing order via API
 function updateOrder(orderId, updatedOrder) {
-    fetch(`/api/orders/${orderId}`, {
+    fetch(`http://localhost:8080/orders/${orderId}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(updatedOrder)
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        // Refresh the orders list
-        displayOrders();
-    })
-    .catch(error => {
-        console.error('Error updating order:', error);
-        alert('Failed to update order. Please try again later.');
-    });
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            // Refresh the orders list
+            displayOrders();
+        })
+        .catch(error => {
+            console.error('Error updating order:', error);
+            alert('Failed to update order. Please try again later.');
+        });
 }
 
 // Get a single order by ID via API
 function getOrderById(orderId, callback) {
-    fetch(`http://localhost:8080/item/search-by-id/${orderId}`)
+    fetch(`http://localhost:8080/orders/${orderId}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -127,6 +135,8 @@ function getOrderById(orderId, callback) {
             return response.json();
         })
         .then(order => {
+            // Log the order structure for debugging
+            console.log('Fetched order:', order);
             callback(order);
         })
         .catch(error => {
@@ -138,7 +148,7 @@ function getOrderById(orderId, callback) {
 
 // Print order report - now fetches the latest data from API
 function printOrderReport(orderId) {
-    getOrderById(orderId, function(order) {
+    getOrderById(orderId, function (order) {
         if (!order) {
             alert("Order not found!");
             return;
@@ -147,7 +157,15 @@ function printOrderReport(orderId) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF("p", "mm", "a4");
 
-        const { customerName, contactNo, items, discount, totalPrice, id } = order;
+        // Safely extract customer information
+        const customerName = order.customer?.name || 'N/A';
+        const contactNo = order.customer?.phone || 'N/A';
+
+        // Handle potential differences in data structure
+        const items = Array.isArray(order.items) ? order.items : [];
+        const discount = Number(order.discount) || 0;
+        const totalPrice = Number(order.total) || 0;
+        const id = order.id || 'Unknown';
 
         // **HEADER**
         doc.setFillColor(45, 45, 45);
@@ -173,7 +191,7 @@ function printOrderReport(orderId) {
         const now = new Date();
         const fullDateTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}  ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
         doc.setFontSize(10);
-        doc.text(`Invoice No: ${order.id.toString().padStart(4, "0")}`, 175, 50);
+        doc.text(`Invoice No: ${String(id).padStart(4, "0")}`, 175, 50);
         doc.setFontSize(10);
         doc.text(`${fullDateTime}`, 15, 50, "left");
 
@@ -182,8 +200,8 @@ function printOrderReport(orderId) {
         doc.setTextColor(0, 0, 0);
 
         doc.setFontSize(10);
-        doc.text(`Customer Name: ${customerName || "N/A"}`, 15, 63);
-        doc.text(`Contact No: ${contactNo || "N/A"}`, 15, 68);
+        doc.text(`Customer Name: ${customerName}`, 15, 63);
+        doc.text(`Contact No: ${contactNo}`, 15, 68);
 
         // **ORDER TABLE HEADER**  
         let startY = 75;
@@ -200,14 +218,15 @@ function printOrderReport(orderId) {
         let yPosition = startY + 15;
 
         items.forEach((item) => {
+            // Safely handle quantity and price
             const quantity = Number(item.quantity) || 0;
             const price = Number(item.price) || 0;
             const total = quantity * price;
 
-            doc.text(truncateText(item.name, 25), 15, yPosition);
+            doc.text(truncateText(item.name || 'Unknown Item', 25), 15, yPosition);
             doc.text(quantity.toString(), 100, yPosition);
-            doc.text(`Rs. ${price}`, 130, yPosition);
-            doc.text(`Rs. ${total}`, 170, yPosition);
+            doc.text(`Rs. ${price.toFixed(2)}`, 130, yPosition);
+            doc.text(`Rs. ${total.toFixed(2)}`, 170, yPosition);
 
             yPosition += 10;
 
@@ -224,15 +243,15 @@ function printOrderReport(orderId) {
 
         doc.setFontSize(12);
         doc.text("Subtotal:", 125, yPosition + 8);
-        doc.text(`Rs. ${totalPrice}`, 165, yPosition + 8);
+        doc.text(`Rs. ${totalPrice.toFixed(2)}`, 165, yPosition + 8);
         doc.text("Discount:", 125, yPosition + 16);
-        doc.text(`Rs. ${discount}`, 165, yPosition + 16);
+        doc.text(`Rs. ${discount.toFixed(2)}`, 165, yPosition + 16);
 
         doc.setFontSize(14);
         doc.setFont("helvetica", "bold");
         doc.text("Total:", 125, yPosition + 26);
         doc.setTextColor(255, 0, 0);
-        doc.text(`Rs. ${(totalPrice - discount)}`, 165, yPosition + 26);
+        doc.text(`Rs. ${(totalPrice - discount).toFixed(2)}`, 165, yPosition + 26);
 
         // **FOOTER**  
         doc.setFontSize(10);
