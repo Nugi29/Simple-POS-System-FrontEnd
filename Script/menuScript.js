@@ -7,6 +7,7 @@ function loadItems() {
     fetch('http://localhost:8080/item/get-all/list', { method: "GET", redirect: "follow" })
         .then(response => response.json())
         .then(items => {
+            allItems = items; // Store items for client-side search
             renderMenu(items);
             console.log(items);
         })
@@ -169,21 +170,11 @@ function filterItemsByCategory() {
 // Filter items by selected category
 function filterByCategory(categoryId) {
     if (categoryId) {
-        fetch(`http://localhost:8080/item/search-by-category/${categoryId}`, { method: "GET" })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Server responded with status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(items => {
-                renderMenu(items);
-            })
-            .catch(error => {
-                console.error('Error filtering items by category:', error);
-            });
+        // Client-side filtering by category
+        const filteredItems = allItems.filter(item => item.category.id == categoryId);
+        renderMenu(filteredItems);
     } else {
-        loadItems(); // Load all items if "All Categories" selected
+        renderMenu(allItems); // Show all items if "All Categories" selected
     }
 }
 
@@ -450,32 +441,28 @@ function fillCustomerInfo(customerId) {
         });
 }
 
-// Search items
+// Store all items for client-side search
+let allItems = [];
+
+// Search items with client-side fallback
 function searchItems(query) {
     if (!query || query.trim() === '') {
-        loadItems();
+        renderMenu(allItems);
         return;
     }
     
-    // Implement client-side filtering if API endpoint not available
-    // Or use an API endpoint if available:
-    fetch(`http://localhost:8080/item/search/${query}`, { method: "GET" })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`Server responded with status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(items => {
-            renderMenu(items);
-        })
-        .catch(error => {
-            console.error('Error searching items:', error);
-        });
+    // Perform client-side search
+    const searchQuery = query.toLowerCase().trim();
+    const filteredItems = allItems.filter(item => {
+        return item.name.toLowerCase().includes(searchQuery) ||
+               item.category.name.toLowerCase().includes(searchQuery);
+    });
+    
+    renderMenu(filteredItems);
 }
 
-// Initialize page on load
-window.onload = function () {
+// Initialize page on DOM ready
+document.addEventListener('DOMContentLoaded', function () {
     loadItems();
     filterItemsByCategory();
     loadCustomers();
@@ -513,4 +500,4 @@ window.onload = function () {
     if (discountInput) {
         discountInput.addEventListener('input', updateTotals);
     }
-};
+});
