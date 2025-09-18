@@ -19,21 +19,15 @@ function displayOrders() {
                 const row = document.createElement('tr');
 
                 // Check if items exist and are in an array format
-                const itemsList = Array.isArray(order.items) ? order.items.map(item => {
-                    console.log(item.items);
-
-
-
-                    // Safely access quantity and price with proper type conversion
-                    const quantity = Number(item.quantity) || 0;
-                    const price = Number(item.price) || 0;
-                    const itemTotal = price * quantity;
-
-                    // For debugging, log the entire item object to inspect its structure
-                    console.log('Item data:', item);
-
-                    return `<li>${item.name || 'Unknown Item'} (x${quantity}) - Rs. ${itemTotal.toFixed(2)}</li>`;
-                }).join('') : '<li>No items</li>';
+                const itemsList = Array.isArray(order.items)
+                    ? order.items.map(oi => {
+                        const name = oi.item?.name || 'Unknown Item';
+                        const quantity = Number(oi.quantity) || 0;
+                        const price = Number(oi.unitprice ?? oi.item?.price) || 0;
+                        const itemTotal = price * quantity;
+                        return `<li>${name} (x${quantity}) - Rs. ${itemTotal.toFixed(2)}</li>`;
+                    }).join('')
+                    : '<li>No items</li>';
 
                 const discount = Number(order.discount) || 0;
                 const totalPrice = Number(order.total) || 0;
@@ -105,7 +99,9 @@ function deleteOrder(orderId) {
 
 // Update an existing order via API
 function updateOrder(orderId, updatedOrder) {
-    fetch(`http://localhost:8080/orders/${orderId}`, {
+    // Ensure the ID is included in the payload as backend expects it in body
+    updatedOrder = { ...updatedOrder, id: orderId };
+    fetch(`http://localhost:8080/orders/update`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json'
@@ -127,7 +123,7 @@ function updateOrder(orderId, updatedOrder) {
 
 // Get a single order by ID via API
 function getOrderById(orderId, callback) {
-    fetch(`http://localhost:8080/orders/${orderId}`)
+    fetch(`http://localhost:8080/orders/search-by-id/${orderId}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -162,9 +158,9 @@ function printOrderReport(orderId) {
         const contactNo = order.customer?.phone || 'N/A';
 
         // Handle potential differences in data structure
-        const items = Array.isArray(order.items) ? order.items : [];
-        const discount = Number(order.discount) || 0;
-        const totalPrice = Number(order.total) || 0;
+    const items = Array.isArray(order.items) ? order.items : [];
+    const discountPercent = Number(order.discount) || 0;
+    const totalPrice = Number(order.total) || 0;
         const id = order.id || 'Unknown';
 
         // **HEADER**
@@ -217,13 +213,15 @@ function printOrderReport(orderId) {
 
         let yPosition = startY + 15;
 
-        items.forEach((item) => {
-            // Safely handle quantity and price
-            const quantity = Number(item.quantity) || 0;
-            const price = Number(item.price) || 0;
+        let computedSubtotal = 0;
+        items.forEach((oi) => {
+            const name = oi.item?.name || 'Unknown Item';
+            const quantity = Number(oi.quantity) || 0;
+            const price = Number(oi.unitprice ?? oi.item?.price) || 0;
             const total = quantity * price;
+            computedSubtotal += total;
 
-            doc.text(truncateText(item.name || 'Unknown Item', 25), 15, yPosition);
+            doc.text(truncateText(name, 25), 15, yPosition);
             doc.text(quantity.toString(), 100, yPosition);
             doc.text(`Rs. ${price.toFixed(2)}`, 130, yPosition);
             doc.text(`Rs. ${total.toFixed(2)}`, 170, yPosition);
@@ -242,16 +240,18 @@ function printOrderReport(orderId) {
         doc.rect(120, yPosition, 80, 30, "F");
 
         doc.setFontSize(12);
-        doc.text("Subtotal:", 125, yPosition + 8);
-        doc.text(`Rs. ${totalPrice.toFixed(2)}`, 165, yPosition + 8);
-        doc.text("Discount:", 125, yPosition + 16);
-        doc.text(`Rs. ${discount.toFixed(2)}`, 165, yPosition + 16);
+    doc.text("Subtotal:", 125, yPosition + 8);
+    doc.text(`Rs. ${computedSubtotal.toFixed(2)}`, 165, yPosition + 8);
+    doc.text(`Discount (${discountPercent.toFixed(2)}%):`, 125, yPosition + 16);
+    const discountAmount = computedSubtotal * (discountPercent / 100);
+    doc.text(`Rs. ${discountAmount.toFixed(2)}`, 165, yPosition + 16);
 
         doc.setFontSize(14);
         doc.setFont("helvetica", "bold");
         doc.text("Total:", 125, yPosition + 26);
         doc.setTextColor(255, 0, 0);
-        doc.text(`Rs. ${(totalPrice - discount).toFixed(2)}`, 165, yPosition + 26);
+    const finalTotal = Math.max(0, computedSubtotal - discountAmount);
+    doc.text(`Rs. ${finalTotal.toFixed(2)}`, 165, yPosition + 26);
 
         // **FOOTER**  
         doc.setFontSize(10);

@@ -324,47 +324,58 @@ function placeOrder() {
     getCustomerByName(customerName)
         .then(existingCustomer => {
             if (existingCustomer) {
-                // Customer exists, use existing customer
                 console.log("Customer found:", existingCustomer);
                 return existingCustomer;
-            } else {
-                // Customer not found, create new one
-                console.log("Customer not found, creating new customer");
-                return createCustomer(customerData);
             }
+            console.log("Customer not found, creating new customer");
+            return createCustomer(customerData)
+                .then(() => getCustomerByName(customerName))
+                .then(createdList => Array.isArray(createdList) ? createdList[0] : createdList);
         })
         .then(customer => {
 
             console.log("wooooo", customer);
 
             const actualCustomer = Array.isArray(customer) ? customer[0] : customer;
-            const id = actualCustomer.id;
-            const name = actualCustomer.name;
+            const id = actualCustomer?.id;
+            const name = actualCustomer?.name || customerName;
+
+            if (!id) {
+                throw new Error('Customer ID not found after creation/search');
+            }
         
             console.log("Customer ID:", id);
             console.log("Customer Name:", name);
 
             // Prepare order data with the customer
+            const rawTotal = calculateRawTotal();
+            const discountRupees = discount;
+            const discountPercent = rawTotal > 0 ? Math.min(100, Math.max(0, (discountRupees / rawTotal) * 100)) : 0;
+
             const orderData = {
-                "code": getNextOrderId(),
-                "datetime": new Date().toLocaleString(),
-                "discount": discount,
-                "total": calculateTotal(),
-                "customer": {
-                    "id": id,
-                    "name": name
+                // Order code generated from backend seed + local increment
+                code: getNextOrderId(),
+                // Backend expects ISO_LOCAL_DATE_TIME; send ISO and trim seconds fraction + Z
+                datetime: new Date().toISOString().slice(0, 19),
+                // Backend expects discount as percentage; UI collects rupees, so convert here
+                discount: discountPercent,
+                total: calculateTotal(),
+                customer: {
+                    id: id,
+                    name: name
                 },
-                "admin": {
-                    "id": 1,
-                    "name": "admin"
+                admin: {
+                    id: 1,
+                    name: "admin"
                 },
-                "paymentmethod": {
-                    "id": 1,
-                    "name": "Cash"
+                paymentmethod: {
+                    id: 1,
+                    name: "Cash"
                 },
-                "items": cart.map(item => ({
-                    "id": item.id,
-                    "quantity": item.quantity // Added quantity to the order items
+                // Backend expects each Orderitem to contain an embedded Item with id
+                items: cart.map(ci => ({
+                    item: { id: ci.id },
+                    quantity: ci.quantity
                 }))
             };
             
