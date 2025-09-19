@@ -49,8 +49,7 @@ function displayOrders() {
             });
         })
         .catch(error => {
-            console.error('Error fetching orders:', error);
-            alert('Failed to load orders. Please try again later.');
+            AlertUtils.showNetworkError();
         });
 }
 
@@ -74,8 +73,7 @@ function addOrder(newOrder) {
             displayOrders();
         })
         .catch(error => {
-            console.error('Error adding order:', error);
-            alert('Failed to add order. Please try again later.');
+            AlertUtils.showError('Failed to add order', 'Please try again later.');
         });
 }
 
@@ -92,8 +90,7 @@ function deleteOrder(orderId) {
             displayOrders();
         })
         .catch(error => {
-            console.error('Error deleting order:', error);
-            alert('Failed to delete order. Please try again later.');
+            AlertUtils.showError('Failed to delete order', 'Please try again later.');
         });
 }
 
@@ -116,8 +113,7 @@ function updateOrder(orderId, updatedOrder) {
             displayOrders();
         })
         .catch(error => {
-            console.error('Error updating order:', error);
-            alert('Failed to update order. Please try again later.');
+            AlertUtils.showError('Failed to update order', 'Please try again later.');
         });
 }
 
@@ -132,12 +128,10 @@ function getOrderById(orderId, callback) {
         })
         .then(order => {
             // Log the order structure for debugging
-            console.log('Fetched order:', order);
             callback(order);
         })
         .catch(error => {
-            console.error(`Error fetching order ${orderId}:`, error);
-            alert('Failed to retrieve order details. Please try again later.');
+            AlertUtils.showError('Failed to retrieve order details', 'Please try again later.');
             callback(null);
         });
 }
@@ -146,7 +140,7 @@ function getOrderById(orderId, callback) {
 function printOrderReport(orderId) {
     getOrderById(orderId, function (order) {
         if (!order) {
-            alert("Order not found!");
+            AlertUtils.showWarning("Order not found", "The requested order could not be found.");
             return;
         }
 

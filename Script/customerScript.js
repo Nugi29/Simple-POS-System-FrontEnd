@@ -32,7 +32,7 @@ function handleFormSubmit(e) {
     const preferences = document.getElementById('preferences').value.trim();
 
     if (name === '' || email === '' || phone === '') {
-        alert('Please fill in all required fields');
+        AlertUtils.showValidationError(['Please fill in all required fields: Name, Email, and Phone']);
         return;
     }
 
@@ -62,6 +62,8 @@ function handleFormSubmit(e) {
 
 // Add a new customer via API
 function addCustomer(customer) {
+    AlertUtils.showLoading('Adding Customer', 'Please wait while we add the new customer...');
+    
     fetch('http://localhost:8080/customer/add', {
         method: 'POST',
         headers: {
@@ -78,7 +80,6 @@ function addCustomer(customer) {
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('application/json')) {
             return response.json().catch(error => {
-                console.warn('Warning: Empty or invalid JSON response from server');
                 return {};
             });
         } else {
@@ -86,18 +87,21 @@ function addCustomer(customer) {
         }
     })
     .then(() => {
+        AlertUtils.close();
         loadCustomers();
         resetForm();
-        alert('Customer added successfully!');
+        AlertUtils.showCustomerUpdate('add', customer.name);
     })
     .catch(error => {
-        console.error('Error adding customer:', error);
-        alert('Failed to add customer. Please try again. Error: ' + error.message);
+        AlertUtils.close();
+        AlertUtils.showError('Failed to add customer', `Please try again. ${error.message}`);
     });
 }
 
 // Update an existing customer via API
 function updateCustomer(customer) {
+    AlertUtils.showLoading('Updating Customer', 'Please wait while we update the customer information...');
+    
     fetch(`http://localhost:8080/customer/update`, {
         method: 'PUT',
         headers: {
@@ -114,7 +118,6 @@ function updateCustomer(customer) {
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('application/json')) {
             return response.json().catch(error => {
-                console.warn('Warning: Empty or invalid JSON response from server');
                 return {};
             });
         } else {
@@ -122,13 +125,14 @@ function updateCustomer(customer) {
         }
     })
     .then(() => {
+        AlertUtils.close();
         loadCustomers();
         resetForm();
-        alert('Customer updated successfully!');
+        AlertUtils.showCustomerUpdate('update', customer.name);
     })
     .catch(error => {
-        console.error('Error updating customer:', error);
-        alert('Failed to update customer. Please try again. Error: ' + error.message);
+        AlertUtils.close();
+        AlertUtils.showError('Failed to update customer', `Please try again. ${error.message}`);
     });
 }
 
@@ -212,33 +216,42 @@ function editCustomer(id) {
         document.getElementById('searchInput').scrollIntoView({ behavior: 'smooth' });
     })
     .catch(error => {
-        console.error('Error loading customer details:', error);
-        alert('Failed to load customer details. Please try again. Error: ' + error.message);
+        AlertUtils.showError('Failed to load customer details', `Please try again. ${error.message}`);
     });
 }
 
 // Delete a customer via API
-function deleteCustomer(id) {
-    if (confirm('Are you sure you want to delete this customer?')) {
-        fetch(`http://localhost:8080/customer/delete/${id}`, {
-            method: 'DELETE'
-        })
-        .then(response => {
+async function deleteCustomer(id) {
+    try {
+        const result = await AlertUtils.showConfirmation(
+            'Are you sure?',
+            'This customer will be permanently deleted. This action cannot be undone.',
+            'Yes, delete customer!',
+            'Cancel'
+        );
+
+        if (result.isConfirmed) {
+            AlertUtils.showLoading('Deleting Customer', 'Please wait while we delete the customer...');
+            
+            const response = await fetch(`http://localhost:8080/customer/delete/${id}`, {
+                method: 'DELETE'
+            });
+            
             if (!response.ok) {
                 throw new Error('Failed to delete customer: ' + response.status);
             }
             
+            AlertUtils.close();
             loadCustomers();
-            alert('Customer deleted successfully!');
+            AlertUtils.showCustomerUpdate('delete', 'Customer');
             
             if (editingId === id) {
                 resetForm();
             }
-        })
-        .catch(error => {
-            console.error('Error deleting customer:', error);
-            alert('Failed to delete customer. Please try again. Error: ' + error.message);
-        });
+        }
+    } catch (error) {
+        AlertUtils.close();
+        AlertUtils.showError('Failed to delete customer', `Please try again. ${error.message}`);
     }
 }
 
@@ -264,7 +277,6 @@ function searchCustomer() {
         refreshTable(customers);
     })
     .catch(error => {
-        console.error('Error searching customers:', error);
         // If API search fails, perform client-side filtering
         const tableRows = document.querySelectorAll('#customerTable tbody tr');
         tableRows.forEach(row => {
@@ -315,11 +327,9 @@ function loadCustomers() {
         return response.json();
     })
     .then(customers => {
-        console.log('Customers loaded:', customers);
         refreshTable(customers);
     })
     .catch(error => {
-        console.error('Error loading customers:', error);
-        alert('Failed to load customers. Please check your connection. Error: ' + error.message);
+        AlertUtils.showNetworkError();
     });
 }

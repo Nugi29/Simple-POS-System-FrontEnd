@@ -9,10 +9,9 @@ function loadItems() {
         .then(items => {
             allItems = items; // Store items for client-side search
             renderMenu(items);
-            console.log(items);
         })
         .catch(error => {
-            console.error('Error loading items:', error);
+            AlertUtils.showNetworkError();
         });
 }
 
@@ -234,23 +233,21 @@ function initializeOrderCode() {
     })
     .then(orderCode => {
         currentOrderCode = orderCode;
-        console.log("Initial Order Code Set To:", currentOrderCode);
     })
     .catch(error => {
-        console.error("Failed to fetch initial order code:", error);
+        // Use fallback order code if fetch fails
+        currentOrderCode = "ORD-2025-0001";
     });
 }
 
 function getNextOrderId() {
     if (!currentOrderCode) {
-        console.warn("Order code not initialized yet.");
         return "ORD-2025-0001"; // Fallback default
     }
 
     const parts = currentOrderCode.split("-"); // Split into ["ORD", "2025", "0025"]
 
     if (parts.length !== 3) {
-        console.error("Invalid order code format:", currentOrderCode);
         return "ORD-2025-0001"; // Fallback default
     }
 
@@ -263,7 +260,6 @@ function getNextOrderId() {
     const newSerial = serial.toString().padStart(4, '0');
 
     currentOrderCode = `${prefix}-${year}-${newSerial}`;
-    console.log("Next Order ID:", currentOrderCode);
     return currentOrderCode;
 }
 
@@ -290,104 +286,102 @@ function createOrder(orderData) {
 }
 
 // Place an order - completely refactored with proper async flow
-function placeOrder() {
+async function placeOrder() {
     const customerName = document.getElementById('customerName').value.trim();
     const contactNo = document.getElementById('contactNo')?.value.trim();
     const discount = parseFloat(document.getElementById('discount')?.value) || 0;
     
     // Validation
     if (!customerName || !contactNo) {
-        alert('Please enter customer information');
+        AlertUtils.showValidationError(['Please enter customer information: Name and Contact Number']);
         return;
     }
 
     if (cart.length === 0) {
-        alert('Your cart is empty');
+        AlertUtils.showWarning('Empty Cart', 'Please add items to your cart before placing an order');
         return;
     }
 
-    const customerData = {
-        name: customerName,
-        phone: contactNo
-    };
+    try {
+        AlertUtils.showLoading('Processing Order', 'Please wait while we process your order...');
 
-    // First, check if customer exists
-    getCustomerByName(customerName)
-        .then(existingCustomer => {
-            if (existingCustomer) {
-                console.log("Customer found:", existingCustomer);
-                return existingCustomer;
-            }
-            console.log("Customer not found, creating new customer");
-            return createCustomer(customerData)
-                .then(() => getCustomerByName(customerName))
-                .then(createdList => Array.isArray(createdList) ? createdList[0] : createdList);
-        })
-        .then(customer => {
+        const customerData = {
+            name: customerName,
+            phone: contactNo
+        };
 
-            console.log("wooooo", customer);
-
-            const actualCustomer = Array.isArray(customer) ? customer[0] : customer;
-            const id = actualCustomer?.id;
-            const name = actualCustomer?.name || customerName;
-
-            if (!id) {
-                throw new Error('Customer ID not found after creation/search');
-            }
+        // First, check if customer exists
+        let existingCustomer = await getCustomerByName(customerName);
+        let customer;
         
-            console.log("Customer ID:", id);
-            console.log("Customer Name:", name);
+        if (existingCustomer) {
+            customer = existingCustomer;
+        } else {
+            await createCustomer(customerData);
+            const createdList = await getCustomerByName(customerName);
+            customer = Array.isArray(createdList) ? createdList[0] : createdList;
+        }
 
-            // Prepare order data with the customer
-            const rawTotal = calculateRawTotal();
-            const discountRupees = discount;
-            const discountPercent = rawTotal > 0 ? Math.min(100, Math.max(0, (discountRupees / rawTotal) * 100)) : 0;
+        const actualCustomer = Array.isArray(customer) ? customer[0] : customer;
+        const id = actualCustomer?.id;
+        const name = actualCustomer?.name || customerName;
 
-            const orderData = {
-                // Order code generated from backend seed + local increment
-                code: getNextOrderId(),
-                // Backend expects ISO_LOCAL_DATE_TIME; send ISO and trim seconds fraction + Z
-                datetime: new Date().toISOString().slice(0, 19),
+        if (!id) {
+            throw new Error('Customer ID not found after creation/search');
+        }
+
+        // Prepare order data with the customer
+        const rawTotal = calculateRawTotal();
+        const discountRupees = discount;
+        const discountPercent = rawTotal > 0 ? Math.min(100, Math.max(0, (discountRupees / rawTotal) * 100)) : 0;
+
+        const orderData = {
+            // Order code generated from backend seed + local increment
+            code: getNextOrderId(),
+            // Backend expects ISO_LOCAL_DATE_TIME; send ISO and trim seconds fraction + Z
+            datetime: new Date().toISOString().slice(0, 19),
                 // Backend expects discount as percentage; UI collects rupees, so convert here
-                discount: discountPercent,
-                total: calculateTotal(),
-                customer: {
-                    id: id,
-                    name: name
-                },
-                admin: {
-                    id: 1,
-                    name: "admin"
-                },
-                paymentmethod: {
-                    id: 1,
-                    name: "Cash"
-                },
-                // Backend expects each Orderitem to contain an embedded Item with id
-                items: cart.map(ci => ({
-                    item: { id: ci.id },
-                    quantity: ci.quantity
-                }))
-            };
-            
-            console.log("Creating order:", JSON.stringify(orderData));
-            return createOrder(orderData);
-        })
-        .then(order => {
-            alert(`Order placed successfully!`);
-            
-            // Reset form and cart
-            cart = [];
-            document.getElementById('existingCustomer').value = '';
-            document.getElementById('customerName').value = '';
-            document.getElementById('contactNo').value = '';
-            document.getElementById('discount').value = '0';
-            renderCart();
-        })
-        .catch(error => {
-            console.error('Error placing order:', error);
-            alert('Failed to place order: ' + error.message);
-        });
+            discount: discountPercent,
+            total: calculateTotal(),
+            customer: {
+                id: id,
+                name: name
+            },
+            admin: {
+                id: 1,
+                name: "admin"
+            },
+            paymentmethod: {
+                id: 1,
+                name: "Cash"
+            },
+            // Backend expects each Orderitem to contain an embedded Item with id
+            items: cart.map(ci => ({
+                item: { id: ci.id },
+                quantity: ci.quantity
+            }))
+        };
+        
+        const order = await createOrder(orderData);
+        
+        AlertUtils.close();
+        
+        // Show success notification with order details
+        const total = calculateTotal();
+        await AlertUtils.showOrderSuccess(orderData.code, customerName, total);
+        
+        // Reset form and cart
+        cart = [];
+        document.getElementById('existingCustomer').value = '';
+        document.getElementById('customerName').value = '';
+        document.getElementById('contactNo').value = '';
+        document.getElementById('discount').value = '0';
+        renderCart();
+        
+    } catch (error) {
+        AlertUtils.close();
+        AlertUtils.showError('Failed to place order', error.message);
+    }
 }
 
 // Load customers
@@ -412,7 +406,7 @@ function loadCustomers() {
             });
         })
         .catch(error => {
-            console.error('Error loading customers:', error);
+            // Silent fail for loading customers dropdown
         });
 }
 

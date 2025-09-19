@@ -54,8 +54,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             })
             .catch(error => {
-                console.error('Error loading categories:', error);
-                alert('Failed to load categories. Please try again later.');
+                AlertUtils.showNetworkError();
             });
     }
    
@@ -71,13 +70,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const doexpire = expireDateInput.value.trim();
 
         if (code === '' || name === '' || category === '' || isNaN(price) || isNaN(stock)) {
-            alert('Please fill in all required fields');
+            AlertUtils.showValidationError(['Please fill in all required fields']);
             return;
         }
 
         // Ensure we have valid category data
         if (!category || !category.includes(',')) {
-            alert('Please select a valid category');
+            AlertUtils.showValidationError(['Please select a valid category']);
             return;
         }
 
@@ -133,8 +132,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 updateTotalItems(data.length);
             })
             .catch(error => {
-                console.error('Error loading items:', error);
-                alert('Failed to load items. Please try again later.');
+                AlertUtils.showNetworkError();
             });
     }
 
@@ -168,20 +166,17 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(data => {
                 // Reload items from API to get updated list
                 loadItemsFromAPI();
-                alert('Item added successfully');
+                AlertUtils.showInventoryUpdate('add', 'Item');
             })
             .catch(error => {
-                console.error('Error adding item:', error);
-                alert(`Failed to add item. ${error.message}`);
+                AlertUtils.showError('Failed to add item', error.message);
             });
     }
 
     function updateItemInAPI(item) {
-        console.log('Updating item with data:', JSON.stringify(item, null, 2));
-        
         // Ensure category is properly formatted
         if (!item.category || !item.category.id) {
-            alert('Invalid category data. Please try again.');
+            AlertUtils.showValidationError(['Invalid category data. Please try again.']);
             return;
         }
 
@@ -206,7 +201,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     try {
                         return JSON.parse(text);
                     } catch (e) {
-                        console.warn('Response is not valid JSON, but operation may have succeeded:', text);
                         return {}; // Return empty object if parsing fails
                     }
                 });
@@ -214,11 +208,10 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(data => {
                 // Reload items from API to get updated list
                 loadItemsFromAPI();
-                alert('Item updated successfully');
+                AlertUtils.showInventoryUpdate('update', 'Item');
             })
             .catch(error => {
-                console.error('Error updating item:', error);
-                alert(`Failed to update item. ${error.message}`);
+                AlertUtils.showError('Failed to update item', error.message);
             });
     }
 
@@ -240,7 +233,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     try {
                         return JSON.parse(text);
                     } catch (e) {
-                        console.warn('Response is not valid JSON, but operation may have succeeded:', text);
                         return {}; // Return empty object if parsing fails
                     }
                 });
@@ -248,11 +240,10 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(data => {
                 // Reload items from API to get updated list
                 loadItemsFromAPI();
-                alert('Item deleted successfully');
+                AlertUtils.showInventoryUpdate('delete', 'Item');
             })
             .catch(error => {
-                console.error('Error deleting item:', error);
-                alert(`Failed to delete item. ${error.message}`);
+                AlertUtils.showError('Failed to delete item', error.message);
             });
     }
 
@@ -327,8 +318,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 populateForm(item);
             })
             .catch(error => {
-                console.error('Error getting item details:', error);
-                alert(`Failed to get item details. ${error.message}`);
+                AlertUtils.showError('Failed to get item details', error.message);
             });
     }
 
@@ -384,9 +374,20 @@ document.addEventListener('DOMContentLoaded', function () {
         submitBtn.innerHTML = '<i class="fas fa-edit me-2"></i>Update Item';
     }
 
-    function confirmDelete(id) {
-        if (confirm('Are you sure you want to delete this item?')) {
-            deleteItemFromAPI(id);
+    async function confirmDelete(id) {
+        try {
+            const result = await AlertUtils.showConfirmation(
+                'Delete Item?',
+                'This item will be permanently deleted. This action cannot be undone.',
+                'Yes, delete it!',
+                'Cancel'
+            );
+
+            if (result.isConfirmed) {
+                deleteItemFromAPI(id);
+            }
+        } catch (error) {
+            AlertUtils.showError('Error', 'Failed to delete item');
         }
     }
 
@@ -413,7 +414,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 updateTotalItems(data.length);
             })
             .catch(error => {
-                console.error('Error during search:', error);
                 // Fallback to client-side filtering if API doesn't support search
                 clientSideSearch(searchValue);
             });
